@@ -21,7 +21,7 @@ const Login = () => {
     validationSchema: validationSchema,
     onSubmit: async (values) => {
       try {
-        const response = await axios.post('http://localhost:4000/api/auth/login', values);
+        const response = await axios.post('https://melodyverse-bzbi.onrender.com/api/auth/login', values);
         const { accessToken, refreshToken, accessTokenExpiryIn } = response.data;
 
         const expiryTime = new Date().getTime() + (accessTokenExpiryIn * 1000);

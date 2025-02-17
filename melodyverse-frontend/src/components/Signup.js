@@ -27,7 +27,7 @@ const Signup = () => {
     validationSchema: validationSchema,
     onSubmit: async (values) => {
       try {
-        const response = await axios.post('http://localhost:4000/api/auth/signup', {
+        const response = await axios.post('https://melodyverse-bzbi.onrender.com/api/auth/signup', {
           username: values.username,
           email: values.email,
           password: values.password,
