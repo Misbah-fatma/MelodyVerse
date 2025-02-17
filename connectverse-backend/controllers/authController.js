@@ -1,73 +1,49 @@
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const { validationResult } = require('express-validator');
+const { body, validationResult } = require('express-validator');
 
 let refreshTokens = [];
 const accessTokenExpiryIn = 3600;
 
 exports.signup = async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
+  const { username, email, password } = req.body;
 
-    const { username, email, password } = req.body;
-
-    try {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const user = new User({ username, email, password: hashedPassword });
-        await user.save();
-
-        const accessToken = jwt.sign({ userId: user._id }, 'my-unique-secret-key', { expiresIn: '1h' });
-        const refreshToken = jwt.sign({ userId: user._id }, 'my-refresh-secret-key');
-
-        refreshTokens.push(refreshToken);
-        res.status(200).json({ message: 'User created', accessToken, refreshToken, accessTokenExpiryIn });
-    } catch (err) {
-        let errMessage = "";
-        if (err.toString().includes("E11000 duplicate key error")) {
-            errMessage = err.toString().includes("email_1 dup key") 
-                ? "Email already exists. Please use another email." 
-                : "Username already exists. Please use another username.";
-        }
-        res.status(400).json({ error: 'Failed to create user. ' + errMessage });
-    }
+  try {
+    const user = new User({ username, email, password });  // Password will be hashed by the pre-save hook
+    await user.save();
+    res.status(200).json({ message: 'User created successfully' });
+  } catch (err) {
+    res.status(400).json({ error: 'Error creating user', details: err });
+  }
 };
 
 exports.login = async (req, res) => {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
 
-    try {
-        const user = await User.findOne({ email });
+  try {
+    const user = await User.findOne({ email });
 
-        if (!user) {
-            console.log("User not found in DB");
-            return res.status(400).json({ error: 'Invalid credentials' });
-        }
-
-        console.log("Stored hashed password:", user.password);
-        console.log("Entered password:", password);
-
-        const isMatch = await bcrypt.compare(password, user.password);
-        console.log("Password Match:", isMatch);
-
-        if (!isMatch) {
-            return res.status(400).json({ error: 'Invalid credentials' });
-        }
-
-        const accessToken = jwt.sign({ userId: user._id }, 'my-unique-secret-key', { expiresIn: '1h' });
-        const refreshToken = jwt.sign({ userId: user._id }, 'my-refresh-secret-key');
-
-        refreshTokens.push(refreshToken);
-        res.status(200).json({ message: 'Login Success', accessToken, refreshToken });
-
-    } catch (err) {
-        console.error("Login Error: ", err);
-        res.status(400).json({ error: 'Failed to log in' });
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid credentials' });
     }
+
+    // Compare the plain-text password with the stored hash
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({ error: 'Invalid credentials' });
+    }
+
+    // Create JWT token on successful login
+    const accessToken = jwt.sign({ userId: user._id }, 'your-secret-key', { expiresIn: '1h' });
+    res.status(200).json({ message: 'Login successful', accessToken });
+  } catch (err) {
+    res.status(400).json({ error: 'Failed to log in', details: err });
+  }
 };
 
+  
 exports.renewAccessToken = (req, res) => {
     const { refresh_token } = req.body;
     if (!refresh_token) return res.sendStatus(401);

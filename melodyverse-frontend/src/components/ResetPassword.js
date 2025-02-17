@@ -26,7 +26,7 @@ const ResetPassword = () => {
     }
 
     try {
-      const res = await axios.post(`http://localhost:4000/api/user/resetpassword/${token}`,{ password });
+      const res = await axios.post(`https://melodyverse-bzbi.onrender.com/api/user/resetpassword/${token}`,{ password });
       setMessage(res.data.message);
       console.log(res.data.message);
     } catch (error) {

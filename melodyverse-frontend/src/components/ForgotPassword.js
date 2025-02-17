@@ -8,7 +8,7 @@ const ForgotPassword = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:4000/api/user/forgotpassword', { email });
+      const res = await axios.post('https://melodyverse-bzbi.onrender.com/api/user/forgotpassword', { email });
       setMessage(res.data.message);
     } catch (error) {
       setMessage(error.response.data.message);
